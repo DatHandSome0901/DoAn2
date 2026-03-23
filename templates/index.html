@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>AI Exam Generator</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>   
+<body>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h2>📚 AI Exam Generator</h2>
+  <button onclick="newTopic()">+ New Topic</button>
+  <div id="topic-list"></div>
+</div>
+
+<!-- CHAT AREA -->
+<div class="chat">
+  <div id="chat-box"></div>
+
+  <div id="loading" style="display:none;color:#10a37f;padding:10px;">
+    🤖 AI đang tạo câu hỏi...
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-box">
+    <input id="topic" placeholder="Nhập chủ đề..." />
+    <input id="num" type="number" value="5" min="1" max="10" style="width:80px;">
+    <button onclick="generate()">Generate</button>
+  </div>
+</div>
+
+</div>
+
+<!-- <script>
+// ================= TYPING EFFECT =================
+function typeEffectHTML(el, text, callback) {
+  el.innerHTML = "";
+  let i = 0;
+  let timer = setInterval(() => {
+    if (text[i] === "<") {
+      let end = text.indexOf(">", i);
+      el.innerHTML += text.slice(i, end + 1);
+      i = end + 1;
+    } else {
+      el.innerHTML += text[i++];
+    }
+    if (i >= text.length) {
+      clearInterval(timer);
+      if (callback) callback();
+    }
+  }, 5);
+}
+
+// ================= STORAGE =================
+let topics = JSON.parse(localStorage.getItem("topics")) || [];
+let currentTopicId = null;
+
+// ================= SAVE =================
+function saveTopics() {
+  localStorage.setItem("topics", JSON.stringify(topics));
+}
+
+function saveCurrentTopic() {
+  if (!currentTopicId) return;
+  let topic = topics.find(t => t.id === currentTopicId);
+  if (topic) topic.content = document.getElementById("chat-box").innerHTML;
+  saveTopics();
+}
+
+// ================= LOAD SIDEBAR =================
+function loadTopics() {
+  let list = document.getElementById("topic-list");
+  list.innerHTML = "";
+
+  topics.forEach((t, index) => {
+    let div = document.createElement("div");
+    div.className = "topic-item";
+    if (t.id === currentTopicId) div.classList.add("active-topic");
+
+    div.onclick = () => openTopic(t.id);
+
+    div.innerHTML = `
+      <span>${t.title}</span>
+      <button class="delete-topic" onclick="event.stopPropagation(); deleteTopic(${index})">❌</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ================= OPEN TOPIC =================
+function openTopic(id) {
+  saveCurrentTopic();
+  currentTopicId = id;
+  let topic = topics.find(t => t.id === id);
+  document.getElementById("chat-box").innerHTML = topic ? topic.content : "";
+  loadTopics();
+}
+
+// ================= NEW TOPIC =================
+function newTopic() {
+  saveCurrentTopic();
+
+  currentTopicId = Date.now();
+  document.getElementById("chat-box").innerHTML = "";
+
+  topics.push({
+    id: currentTopicId,
+    title: "Topic " + (topics.length + 1),
+    content: ""
+  });
+
+  saveTopics();
+  loadTopics();
+  openTopic(currentTopicId);
+}
+
+// ================= DELETE =================
+function deleteTopic(index) {
+  if (!confirm("Xóa topic này?")) return;
+
+  let deletedId = topics[index].id;
+  topics.splice(index, 1);
+  saveTopics();
+
+  if (currentTopicId === deletedId) {
+    currentTopicId = null;
+    document.getElementById("chat-box").innerHTML = "";
+  }
+
+  loadTopics();
+}
+
+// ================= COPY =================
+function copyOne(el) {
+  let text = el.parentElement.previousElementSibling.innerText;
+  navigator.clipboard.writeText(text);
+  el.innerHTML = "✅";
+  setTimeout(() => el.innerHTML = "📋", 1500);
+}
+
+// ================= AUTO CREATE TOPIC IF NONE =================
+function ensureTopicExists() {
+  if (!currentTopicId) {
+    currentTopicId = Date.now();
+    topics.push({
+      id: currentTopicId,
+      title: "Topic " + (topics.length + 1),
+      content: ""
+    });
+    saveTopics();
+    loadTopics();
+  }
+}
+
+// ================= GENERATE =================
+function generate() {
+  let topic = document.getElementById("topic").value;
+  let n = parseInt(document.getElementById("num").value);
+
+  if (!topic) return alert("Nhập chủ đề!");
+  if (n > 10) return alert("Không quá 10 câu!");
+
+  // 🔥 AUTO CREATE TOPIC IF NOT EXIST
+  ensureTopicExists();
+
+  let chat = document.getElementById("chat-box");
+  chat.innerHTML += `<div class="user">Chủ đề: ${topic}</div>`;
+  document.getElementById("loading").style.display = "block";
+
+  fetch("/generate", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({topic, n})
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("loading").style.display = "none";
+
+    let botDiv = document.createElement("div");
+    botDiv.className = "bot typing";
+    chat.appendChild(botDiv);
+
+    let html = data.questions.replace(/\n/g, "<br>");
+
+    typeEffectHTML(botDiv, html, () => {
+      saveCurrentTopic(); // lưu sau khi gõ xong
+    });
+
+    let tools = document.createElement("div");
+    tools.className = "msg-tools";
+    tools.innerHTML = `
+      <span onclick="copyOne(this)">📋</span>
+      <a href="/download/${data.file}">⬇</a>
+    `;
+    chat.appendChild(tools);
+
+    chat.scrollTop = chat.scrollHeight;
+  });
+}
+
+// ================= AUTO LOAD =================
+loadTopics();
+if (topics.length > 0) {
+  currentTopicId = topics[topics.length - 1].id;
+  openTopic(currentTopicId);
+}
+</script> -->
+
+<!-- <script>
+// ================= GLOBAL =================
+let topics = [];
+let currentTopicId = null;
+
+// ================= LOAD =================
+function loadTopicsFromServer() {
+  fetch("/topics")
+    .then(r => r.json())
+    .then(data => {
+      topics = data;
+      renderSidebar();
+
+      if (topics.length > 0) {
+        openTopic(topics[0].id);
+      }
+    });
+}
+
+// ================= SIDEBAR =================
+function renderSidebar() {
+  let list = document.getElementById("topic-list");
+  list.innerHTML = "";
+
+  topics.forEach(t => {
+    let div = document.createElement("div");
+    div.className = "topic-item";
+
+    div.innerHTML = `
+      <span onclick="openTopic(${t.id})">${t.title}</span>
+      <button onclick="renameTopic(${t.id})">✏️</button>
+      <button onclick="deleteTopic(${t.id})">❌</button>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+// ================= OPEN =================
+function openTopic(id) {
+  currentTopicId = id;
+  let t = topics.find(x => x.id === id);
+
+  document.getElementById("chat-box").innerHTML =
+    t.content.replace(/\n/g, "<br>");
+}
+
+// ================= DELETE =================
+function deleteTopic(id) {
+  if (!confirm("Xóa topic?")) return;
+
+  fetch("/delete_topic", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({id})
+  }).then(loadTopicsFromServer);
+}
+
+// ================= RENAME =================
+function renameTopic(id) {
+  let title = prompt("Tên mới:");
+  if (!title) return;
+
+  fetch("/rename_topic", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({id, title})
+  }).then(loadTopicsFromServer);
+}
+
+// ================= COPY =================
+function copyOne(el) {
+  let text = el.parentElement.previousElementSibling.innerText;
+  navigator.clipboard.writeText(text);
+}
+
+// ================= TYPING =================
+function typeEffect(el, text) {
+  el.innerHTML = "";
+  let i = 0;
+  let timer = setInterval(() => {
+    el.innerHTML += text[i++];
+    if (i >= text.length) clearInterval(timer);
+  }, 5);
+}
+
+// ================= GENERATE =================
+function generate() {
+  let topic = document.getElementById("topic").value;
+  let n = parseInt(document.getElementById("num").value);
+
+  let chat = document.getElementById("chat-box");
+
+  chat.innerHTML += `<div class="user">Chủ đề: ${topic}</div>`;
+  document.getElementById("loading").style.display = "block";
+
+  fetch("/generate", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({topic, n})
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("loading").style.display = "none";
+
+    let bot = document.createElement("div");
+    bot.className = "bot";
+    chat.appendChild(bot);
+
+    let html = data.questions.replace(/\n/g, "<br>");
+    typeEffect(bot, html);
+
+    let tools = document.createElement("div");
+    tools.innerHTML = `
+      <span onclick="copyOne(this)">📋</span>
+      <a href="/download/${data.file}">⬇</a>
+    `;
+    chat.appendChild(tools);
+
+    loadTopicsFromServer();
+  });
+}
+
+// ================= INIT =================
+loadTopicsFromServer();
+</script> -->
+
+<script>
+let topics = [];
+let currentTopicId = null;
+
+// ================= TYPING =================
+function typeEffectHTML(el, text) {
+  el.innerHTML = "";
+  let i = 0;
+
+  let timer = setInterval(() => {
+    if (text[i] === "<") {
+      let end = text.indexOf(">", i);
+      el.innerHTML += text.slice(i, end + 1);
+      i = end + 1;
+    } else {
+      el.innerHTML += text[i++];
+    }
+
+    if (i >= text.length) clearInterval(timer);
+  }, 5);
+}
+
+// ================= COPY =================
+function copyOne(el) {
+  let text = el.parentElement.previousElementSibling.innerText;
+  navigator.clipboard.writeText(text);
+}
+
+// ================= LOAD =================
+function loadTopicsFromServer() {
+  fetch("/topics")
+    .then(res => res.json())
+    .then(data => {
+      topics = data;
+      renderSidebar();
+
+      if (topics.length > 0) {
+        openTopic(topics[0].id);
+      }
+    });
+}
+
+// ================= SIDEBAR =================
+function renderSidebar() {
+  let list = document.getElementById("topic-list");
+  list.innerHTML = "";
+
+  topics.forEach(t => {
+    let div = document.createElement("div");
+    div.className = "topic-item";
+
+    div.innerHTML = `
+      <span onclick="openTopic(${t.id})">${t.title}</span>
+      <button class="delete-topic" onclick="event.stopPropagation(); deleteTopic(${t.id})">❌</button>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+// ================= OPEN =================
+function openTopic(id) {
+  currentTopicId = id;
+  let topic = topics.find(t => t.id === id);
+
+  let chat = document.getElementById("chat-box");
+  chat.innerHTML = "";
+
+  if (!topic || !topic.content) return;
+
+  let botDiv = document.createElement("div");
+  botDiv.className = "bot";
+  botDiv.innerHTML = topic.content.replace(/\n/g, "<br>");
+  chat.appendChild(botDiv);
+
+  let tools = document.createElement("div");
+  tools.className = "msg-tools";
+  tools.innerHTML = `
+    <span onclick="copyOne(this)">📋</span>
+    <a href="/download/${topic.file}">⬇</a>
+  `;
+  chat.appendChild(tools);
+}
+
+// ================= DELETE =================
+function deleteTopic(id) {
+  if (!confirm("Xóa topic?")) return;
+
+  fetch("/delete_topic", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({id})
+  }).then(loadTopicsFromServer);
+}
+
+// ================= NEW =================
+function newTopic() {
+  document.getElementById("chat-box").innerHTML = "";
+  document.getElementById("topic").value = "";
+}
+
+// ================= GENERATE =================
+function generate() {
+  let topic = document.getElementById("topic").value;
+  let n = parseInt(document.getElementById("num").value);
+
+  if (!topic) return alert("Nhập chủ đề!");
+
+  let chat = document.getElementById("chat-box");
+
+  chat.innerHTML += `<div class="user">Chủ đề: ${topic}</div>`;
+  document.getElementById("loading").style.display = "block";
+
+  fetch("/generate", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({topic, n})
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("loading").style.display = "none";
+
+    let botDiv = document.createElement("div");
+    botDiv.className = "bot typing";
+    chat.appendChild(botDiv);
+
+    let html = data.questions.replace(/\n/g, "<br>");
+    typeEffectHTML(botDiv, html);
+
+    let tools = document.createElement("div");
+    tools.className = "msg-tools";
+    tools.innerHTML = `
+      <span onclick="copyOne(this)">📋</span>
+      <a href="/download/${data.file}">⬇</a>
+    `;
+    chat.appendChild(tools);
+
+    chat.scrollTop = chat.scrollHeight;
+
+    loadTopicsFromServer();
+  });
+}
+
+// ================= INIT =================
+loadTopicsFromServer();
+</script>
+<div class="chat">
+
+  <!-- 🔥 NÚT LOGOUT -->
+  <a href="/logout" class="logout-btn">🔓 Logout</a>
+
+  <div id="chat-box"></div>
+</body>
+</html>
